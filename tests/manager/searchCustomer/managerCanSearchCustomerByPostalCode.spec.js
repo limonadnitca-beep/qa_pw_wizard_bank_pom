@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test } from '@playwright/test';
 import { faker } from '@faker-js/faker';
 import { AddCustomerPage } from '../../../src/pages/manager/AddCustomerPage.js';
 import { CustomersListPage } from '../../../src/pages/manager/CustomersListPage.js';
@@ -14,6 +14,8 @@ test.beforeEach(async ({ page }) => {
 
   const addCustomerPage = new AddCustomerPage(page);
 
+  page.once('dialog', (dialog) => dialog.accept());
+
   await addCustomerPage.open();
   await addCustomerPage.addCustomer(firstName, lastName, postalCode);
   await page.reload();
@@ -23,14 +25,10 @@ test('Assert manager can search customer by Postal Code', async ({ page }) => {
   const customersListPage = new CustomersListPage(page);
 
   await customersListPage.open();
-
-  const searchInput = page.getByPlaceholder('Search Customer');
-  await searchInput.fill(postalCode);
-
-  const customerRows = page.getByRole('row').filter({ hasText: postalCode });
-
-  await expect(customerRows).toHaveCount(1);
-  await expect(customerRows.first()).toContainText(firstName);
-  await expect(customerRows.first()).toContainText(lastName);
-  await expect(page.getByRole('row')).toHaveCount(2);
+  await customersListPage.searchCustomer(postalCode);
+  await customersListPage.assertCustomerSearchByPostalCode(
+    firstName,
+    lastName,
+    postalCode,
+  );
 });
